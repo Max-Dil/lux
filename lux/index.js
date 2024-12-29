@@ -16,12 +16,13 @@ import { font } from './core/font.js';
 import { filesystem } from './core/filesystem.js';
 import { data } from './core/data.js';
 import { event } from './core/event.js';
+import { window } from './core/window.js';
 
 window.lux = lux;
 const modules = {
     graphics, physics, math, mouse, timer, sound, 
     video, touch, thread, system, joystick, keyboard, 
-    image, font, filesystem, data, event
+    image, font, filesystem, data, event, window
 };
 Object.assign(lux, modules);
 
