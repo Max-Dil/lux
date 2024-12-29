@@ -28,6 +28,9 @@ export let lux = {
                         if (this.keypressed) {
                             this.keypressed(e.args[0], e.args[1], e.args[2]);
                         }
+                        if (!lux.audio.audioContext) {
+                            lux.audio.init();
+                        }
                         break;
                     case 'keyreleased':
                         if (this.keyreleased) {
@@ -42,6 +45,9 @@ export let lux = {
                     case 'mousepressed':
                         if (this.mousepressed) {
                             this.mousepressed(e.args[0], e.args[1], e.args[2], e.args[3]);
+                        }
+                        if (!lux.audio.audioContext) {
+                            lux.audio.init();
                         }
                         break;
                     case 'mousereleased':
@@ -62,6 +68,9 @@ export let lux = {
                     case 'touchpressed':
                         if (this.touchpressed) {
                             this.touchpressed(e.args[0], e.args[1], e.args[2]);
+                        }
+                        if (!lux.audio.audioContext) {
+                            lux.audio.init();
                         }
                         break;
                     case 'touchreleased':

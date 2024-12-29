@@ -10,6 +10,19 @@ export const audio = {
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             this.listener = this.audioContext.listener;
 
+            if (this.audioContext.state === 'suspended') {
+                const resumeAudioContext = async () => {
+                    await this.audioContext.resume();
+                    document.removeEventListener('click', resumeAudioContext);
+                    document.removeEventListener('keydown', resumeAudioContext);
+                    document.removeEventListener('touchstart', resumeAudioContext);
+                };
+
+                document.addEventListener('click', resumeAudioContext);
+                document.addEventListener('keydown', resumeAudioContext);
+                document.addEventListener('touchstart', resumeAudioContext);
+            }
+
             if (this.listener.positionX) {
                 this.listener.positionX.value = 0;
                 this.listener.positionY.value = 0;
@@ -209,4 +222,4 @@ export const audio = {
     }
 };
 
-audio.init();
+// audio.init();
