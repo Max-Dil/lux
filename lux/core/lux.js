@@ -128,7 +128,7 @@ export let lux = {
             if (this.draw) {
                 this.graphics.push();
                 const [r, g, b, a] = this.graphics.getBackgroundColor();
-                this.graphics.clear(r || 1, g || 1, b || 1, a || 1);
+                this.graphics.clear(r, g, b, a);
                 this.graphics.pop();
 
                 this.graphics.push();

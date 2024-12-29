@@ -7,56 +7,56 @@ export const graphics = {
         if (!this.ctx) {
             console.error('Canvas 2D не поддерживается');
         }
+        Object.assign(this, {
+            lineWidth: 1,
+            fontSize: 16, 
+            fontFamily: 'Arial',
+            backgroundColor: {r: 0, g: 0, b: 0, a: 1},
+            blendMode: 'source-over',
+            defaultFilter: 'linear',
+            pointSize: 1,
+            scissorEnabled: false,
+            scissorBox: {x: 0, y: 0, width: 0, height: 0},
+            dpiScale: window.devicePixelRatio || 1
+        });
 
-        this.lineWidth = 1;
-        this.fontSize = 16;
-        this.fontFamily = 'Arial';
-        this.backgroundColor = {r: 0, g: 0, b: 0, a: 1};
-        this.blendMode = 'source-over';
-        this.defaultFilter = 'linear';
-        this.pointSize = 1;
-        this.scissorEnabled = false;
-        this.scissorBox = {x: 0, y: 0, width: 0, height: 0};
-
-        this.dpiScale = window.devicePixelRatio || 1;
+        this.setColor(1, 1, 1, 1);
     },
+    TWO_PI: Math.PI * 2,
 
     roundRectPath: function(x, y, width, height, rx, ry, segments) {
+        const [x2, y2] = [x + width, y + height];
         const corners = [
             [x + rx, y],
-            [x + width - rx, y],
-            [x + width, y + ry],
-            [x + width, y + height - ry],
-            [x + width - rx, y + height],
-            [x + rx, y + height],
-            [x, y + height - ry],
+            [x2 - rx, y], 
+            [x2, y + ry],
+            [x2, y2 - ry],
+            [x2 - rx, y2],
+            [x + rx, y2],
+            [x, y2 - ry],
             [x, y + ry]
         ];
 
-        this.ctx.moveTo(corners[0][0], corners[0][1]);
+        const {ctx} = this;
+        ctx.moveTo(corners[0][0], corners[0][1]);
         
-        this.ctx.lineTo(corners[1][0], corners[1][1]);
-        this.ctx.quadraticCurveTo(x + width, y, corners[2][0], corners[2][1]);
+        ctx.lineTo(corners[1][0], corners[1][1]);
+        ctx.quadraticCurveTo(x2, y, corners[2][0], corners[2][1]);
         
-        this.ctx.lineTo(corners[3][0], corners[3][1]);
-        this.ctx.quadraticCurveTo(x + width, y + height, corners[4][0], corners[4][1]);
+        ctx.lineTo(corners[3][0], corners[3][1]); 
+        ctx.quadraticCurveTo(x2, y2, corners[4][0], corners[4][1]);
         
-        this.ctx.lineTo(corners[5][0], corners[5][1]);
-        this.ctx.quadraticCurveTo(x, y + height, corners[6][0], corners[6][1]);
+        ctx.lineTo(corners[5][0], corners[5][1]);
+        ctx.quadraticCurveTo(x, y2, corners[6][0], corners[6][1]);
         
-        this.ctx.lineTo(corners[7][0], corners[7][1]);
-        this.ctx.quadraticCurveTo(x, y, corners[0][0], corners[0][1]);
+        ctx.lineTo(corners[7][0], corners[7][1]);
+        ctx.quadraticCurveTo(x, y, corners[0][0], corners[0][1]);
         
-        this.ctx.closePath();
+        ctx.closePath();
     },
 
-    toPixels: function(value) {
-        return value * this.dpiScale;
-    },
-    
-    fromPixels: function(value) {
-        return value / this.dpiScale;
-    },
+    toPixels: value => value * this.dpiScale,
+    fromPixels: value => value / this.dpiScale,
 
     //
     //
@@ -66,19 +66,16 @@ export const graphics = {
     },
 
     setCanvas: function(canvasObj) {
-        if (!canvasObj) {
-            this.ctx = this.canvas.getContext('2d');
-            return;
-        }
-        this.ctx = canvasObj.ctx;
+        this.ctx = canvasObj?.ctx || this.canvas.getContext('2d');
     },
 
     clear: function(r, g, b, a = 1) {
+        const {ctx, canvas} = this;
         if (r !== undefined) {
-            this.ctx.fillStyle = `rgba(${r*255},${g*255},${b*255},${a})`;
-            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            ctx.fillStyle = `rgba(${r*255},${g*255},${b*255},${a})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
         } else {
-            this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
         }
     },
 
@@ -101,8 +98,7 @@ export const graphics = {
 
     setColor: function(r, g, b, a = 1) {
         const colorString = `rgba(${r*255},${g*255},${b*255},${a})`;
-        this.ctx.fillStyle = colorString;
-        this.ctx.strokeStyle = colorString;
+        this.ctx.fillStyle = this.ctx.strokeStyle = colorString;
     },
 
     setFont: function(font, size) {
@@ -129,8 +125,7 @@ export const graphics = {
     },
 
     setLineWidth: function(width) {
-        this.lineWidth = width;
-        this.ctx.lineWidth = width;
+        this.lineWidth = this.ctx.lineWidth = width;
     },
 
     setLineStyle: function(style) {
@@ -153,12 +148,11 @@ export const graphics = {
         return tempCanvas.toDataURL();
     },
 
-    setNewFont: function(filename, size) {
+    setNewFont: async function(filename, size) {
         const font = new FontFace('CustomFont', `url(${filename})`);
-        return font.load().then(loadedFont => {
-            document.fonts.add(loadedFont);
-            this.setFont('CustomFont', size);
-        });
+        const loadedFont = await font.load();
+        document.fonts.add(loadedFont);
+        this.setFont('CustomFont', size);
     },
 
     setDefaultFilter: function(min, mag = min) {
@@ -173,113 +167,104 @@ export const graphics = {
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
+        
         return {
-            canvas: canvas,
-            ctx: ctx,
-            width: width,
-            height: height,
-            clear: function() {
-                this.ctx.clearRect(0, 0, this.width, this.height);
+            canvas,
+            ctx,
+            width,
+            height,
+            clear() {
+                this.ctx.clearRect(0, 0, width, height);
             },
-            getWidth: function() {
-                return this.width;
-            },
-            getHeight: function() {
-                return this.height;
-            },
-            getDimensions: function() {
-                return [this.width, this.height];
-            },
-            getPixel: function(x, y) {
+            getWidth: () => width,
+            getHeight: () => height,
+            getDimensions: () => [width, height],
+            getPixel(x, y) {
                 const data = this.ctx.getImageData(x, y, 1, 1).data;
-                return [data[0]/255, data[1]/255, data[2]/255, data[3]/255];
+                return data.map(v => v/255);
             },
-            setPixel: function(x, y, r, g, b, a = 1) {
+            setPixel(x, y, r, g, b, a = 1) {
                 const imageData = this.ctx.createImageData(1, 1);
-                imageData.data[0] = r * 255;
-                imageData.data[1] = g * 255;
-                imageData.data[2] = b * 255;
-                imageData.data[3] = a * 255;
+                const data = imageData.data;
+                data[0] = r * 255;
+                data[1] = g * 255; 
+                data[2] = b * 255;
+                data[3] = a * 255;
                 this.ctx.putImageData(imageData, x, y);
             }
         };
     },
 
     rectangle: function(mode, x, y, width, height, rx = 0, ry = rx, segments = 10) {
+        const {ctx} = this;
         if (rx <= 0 && ry <= 0) {
-            if (mode === 'fill') {
-                this.ctx.fillRect(x, y, width, height);
-            } else {
-                this.ctx.strokeRect(x, y, width, height);
-            }
+            ctx[mode === 'fill' ? 'fillRect' : 'strokeRect'](x, y, width, height);
             return;
         }
 
-        this.ctx.beginPath();
+        ctx.beginPath();
         this.roundRectPath(x, y, width, height, rx, ry, segments);
-        if (mode === 'fill') {
-            this.ctx.fill();
-        } else {
-            this.ctx.stroke();
-        }
+        ctx[mode === 'fill' ? 'fill' : 'stroke']();
     },
 
     circle: function(mode, x, y, radius, segments = 100) {
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, radius, 0, Math.PI * 2);
-        if (mode === 'fill') {
-            this.ctx.fill();
-        } else {
-            this.ctx.stroke();
-        }
+        const {ctx, TWO_PI} = this;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, TWO_PI);
+        ctx[mode === 'fill' ? 'fill' : 'stroke']();
     },
 
     line: function(points) {
+        const {ctx} = this;
         if (arguments.length === 4) {
             const [x1, y1, x2, y2] = arguments;
-            this.ctx.beginPath();
-            this.ctx.moveTo(x1, y1);
-            this.ctx.lineTo(x2, y2);
-            this.ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
             return;
         }
 
         if (points.length < 4) return;
         
-        this.ctx.beginPath();
-        this.ctx.moveTo(points[0], points[1]);
+        ctx.beginPath();
+        ctx.moveTo(points[0], points[1]);
         
         for (let i = 2; i < points.length; i += 2) {
-            this.ctx.lineTo(points[i], points[i + 1]);
+            ctx.lineTo(points[i], points[i + 1]);
         }
         
-        this.ctx.stroke();
+        ctx.stroke();
     },
 
     printf: function(text, x, y, limit, align = 'left') {
-        this.ctx.font = `${this.fontSize}px ${this.fontFamily}`;
-        this.ctx.textAlign = align;
-        this.ctx.fillText(text, x, y, limit);
+        const {ctx, fontSize, fontFamily} = this;
+        ctx.font = `${fontSize}px ${fontFamily}`;
+        ctx.textAlign = align;
+        ctx.fillText(text, x, y, limit);
     },
 
     print: function(text, x, y) {
-        this.ctx.font = `${this.fontSize}px ${this.fontFamily}`;
-        this.ctx.fillText(text, x, y);
+        const {ctx, fontSize, fontFamily} = this;
+        ctx.font = `${fontSize}px ${fontFamily}`;
+        ctx.fillText(text, x, y);
     },
 
     image: function(img, x, y, width, height, rotation = 0) {
-        this.ctx.save();
-        this.ctx.translate(x, y);
-        if (rotation !== 0) {
-            this.ctx.rotate(rotation);
+        const {ctx} = this;
+        ctx.save();
+        ctx.translate(x, y);
+        
+        if (rotation) {
+            ctx.rotate(rotation);
         }
         
         if (width && height) {
-            this.ctx.drawImage(img, -width/2, -height/2, width, height);
+            ctx.drawImage(img, -width/2, -height/2, width, height);
         } else {
-            this.ctx.drawImage(img, -img.width/2, -img.height/2);
+            ctx.drawImage(img, -img.width/2, -img.height/2);
         }
-        this.ctx.restore();
+        ctx.restore();
     },
 
     newImage: function(src) {
@@ -294,88 +279,63 @@ export const graphics = {
     polygon: function(mode, points) {
         if (points.length < 4) return;
         
-        this.ctx.beginPath();
-        this.ctx.moveTo(points[0], points[1]);
+        const {ctx} = this;
+        ctx.beginPath();
+        ctx.moveTo(points[0], points[1]);
         
         for (let i = 2; i < points.length; i += 2) {
-            this.ctx.lineTo(points[i], points[i + 1]);
+            ctx.lineTo(points[i], points[i + 1]);
         }
         
-        this.ctx.closePath();
-        
-        if (mode === 'fill') {
-            this.ctx.fill();
-        } else {
-            this.ctx.stroke();
-        }
+        ctx.closePath();
+        ctx[mode === 'fill' ? 'fill' : 'stroke']();
     },
 
     ellipse: function(mode, x, y, radiusX, radiusY, segments = 100) {
-        this.ctx.beginPath();
-        this.ctx.ellipse(x, y, radiusX, radiusY, 0, 0, Math.PI * 2);
-        if (mode === 'fill') {
-            this.ctx.fill();
-        } else {
-            this.ctx.stroke();
-        }
+        const {ctx, TWO_PI} = this;
+        ctx.beginPath();
+        ctx.ellipse(x, y, radiusX, radiusY, 0, 0, TWO_PI);
+        ctx[mode === 'fill' ? 'fill' : 'stroke']();
     },
 
     arc: function(mode, x, y, radius, startAngle, endAngle, segments = 100) {
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, radius, startAngle, endAngle);
-        if (mode === 'fill') {
-            this.ctx.fill();
-        } else {
-            this.ctx.stroke();
-        }
+        const {ctx} = this;
+        ctx.beginPath();
+        ctx.arc(x, y, radius, startAngle, endAngle);
+        ctx[mode === 'fill' ? 'fill' : 'stroke']();
     },
 
     draw: function(drawable, x, y, r = 0, sx = 1, sy = sx, ox = 0, oy = 0, kx = 0, ky = 0) {
         if (!drawable) return;
         
-        this.ctx.save();
-        this.ctx.translate(x, y);
-        this.ctx.rotate(r);
-        this.ctx.scale(sx, sy);
-        this.ctx.transform(1, ky, kx, 1, 0, 0);
+        const {ctx} = this;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(r);
+        ctx.scale(sx, sy);
+        ctx.transform(1, ky, kx, 1, 0, 0);
 
-        if (drawable.canvas) {
-            this.ctx.drawImage(
-                drawable.canvas, 
-                -ox, 
-                -oy, 
-                drawable.width, 
-                drawable.height
-            );
-        } else if (drawable instanceof Image) {
-            this.ctx.drawImage(
-                drawable, 
-                -ox, 
-                -oy, 
-                drawable.width, 
-                drawable.height
-            );
-        }
+        const target = drawable.canvas || drawable;
+        ctx.drawImage(
+            target,
+            -ox,
+            -oy,
+            target.width,
+            target.height
+        );
 
-        this.ctx.restore();
+        ctx.restore();
     },
 
     newVideo: function(filename) {
         const video = document.createElement('video');
         video.src = filename;
-        video.play = function() {
-            return video.play();
-        };
-        video.pause = function() {
-            video.pause();
-        };
-        video.rewind = function() {
-            video.currentTime = 0;
-        };
-        video.seek = function(time) {
-            video.currentTime = time;
-        };
-        return video;
+        return Object.assign(video, {
+            play: () => video.play(),
+            pause: () => video.pause(),
+            rewind: () => video.currentTime = 0,
+            seek: time => video.currentTime = time
+        });
     },
 
     //
@@ -386,14 +346,16 @@ export const graphics = {
     },
     
     getDimensions: function() {
+        const {canvas, dpiScale} = this;
         return [
-            this.canvas.width / this.dpiScale,
-            this.canvas.height / this.dpiScale
+            canvas.width / dpiScale,
+            canvas.height / dpiScale
         ];
     },
     
     getPixelDimensions: function() {
-        return [this.canvas.width, this.canvas.height];
+        const {canvas} = this;
+        return [canvas.width, canvas.height];
     },
     
     getWidth: function() {
@@ -421,12 +383,8 @@ export const graphics = {
     },
 
     getBackgroundColor: function() {
-        return [
-            this.backgroundColor.r,
-            this.backgroundColor.g,
-            this.backgroundColor.b,
-            this.backgroundColor.a
-        ];
+        const {r, g, b, a} = this.backgroundColor;
+        return [r, g, b, a];
     },
 
     scale: function(sx, sy = sx) {
@@ -442,17 +400,13 @@ export const graphics = {
     },
 
     applyTransform: function(transform) {
-        this.ctx.transform(
-            transform.a, transform.b,
-            transform.c, transform.d,
-            transform.tx, transform.ty
-        );
+        const {a, b, c, d, tx, ty} = transform;
+        this.ctx.transform(a, b, c, d, tx, ty);
     },
 
     inverseTransformPoint: function(screenX, screenY) {
         const transform = this.ctx.getTransform();
-        const inverse = transform.inverse();
-        const point = inverse.transformPoint(new DOMPoint(screenX, screenY));
+        const point = transform.inverse().transformPoint(new DOMPoint(screenX, screenY));
         return [point.x, point.y];
     },
 
@@ -461,16 +415,12 @@ export const graphics = {
     },
 
     replaceTransform: function(transform) {
-        this.ctx.setTransform(
-            transform.a, transform.b,
-            transform.c, transform.d,
-            transform.tx, transform.ty
-        );
+        const {a, b, c, d, tx, ty} = transform;
+        this.ctx.setTransform(a, b, c, d, tx, ty);
     },
     
     transformPoint: function(globalX, globalY) {
-        const transform = this.ctx.getTransform();
-        const point = transform.transformPoint(new DOMPoint(globalX, globalY));
+        const point = this.ctx.getTransform().transformPoint(new DOMPoint(globalX, globalY));
         return [point.x, point.y];
     },
 
