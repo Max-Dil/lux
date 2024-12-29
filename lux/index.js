@@ -17,11 +17,12 @@ import { filesystem } from './core/filesystem.js';
 import { data } from './core/data.js';
 import { event } from './core/event.js';
 import { window } from './core/window.js';
+import { audio } from './core/audio.js';
 
 window.lux = lux;
 const modules = {
     graphics, physics, math, mouse, timer, sound, 
-    video, touch, thread, system, joystick, keyboard, 
+    video, touch, thread, system, joystick, keyboard, audio,
     image, font, filesystem, data, event, window
 };
 Object.assign(lux, modules);
