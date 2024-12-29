@@ -18,23 +18,12 @@ import { data } from './core/data.js';
 import { event } from './core/event.js';
 
 window.lux = lux;
-lux.graphics = graphics;
-lux.physics = physics;
-lux.math = math;
-lux.mouse = mouse;
-lux.timer = timer;
-lux.sound = sound;
-lux.video = video;
-lux.touch = touch;
-lux.thread = thread;
-lux.system = system;
-lux.joystick = joystick;
-lux.keyboard = keyboard;
-lux.image = image;
-lux.font = font;
-lux.filesystem = filesystem;
-lux.data = data;
-lux.event = event;
+const modules = {
+    graphics, physics, math, mouse, timer, sound, 
+    video, touch, thread, system, joystick, keyboard, 
+    image, font, filesystem, data, event
+};
+Object.assign(lux, modules);
 
 setTimeout(() => {
     lux.run();
