@@ -251,6 +251,7 @@ export const graphics = {
     },
 
     image: function(img, x, y, width, height, rotation = 0) {
+        if (!img) return;
         const {ctx} = this;
         ctx.save();
         ctx.translate(x, y);
